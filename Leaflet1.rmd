@@ -1,0 +1,55 @@
+---
+title: "Leaflet Project"
+author: "Irina White"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(leaflet)
+library(dplyr)
+library(tidyr)
+
+```
+## Overview and Data preparation
+The project is using the free dataset from the simple map website that includes latitudes and longitudes of major cities and towns around the world in addition to other information.
+```{r, comment=""}
+# Download temp zip file to obtain data
+temp <- tempfile()
+download.file("https://simplemaps.com/static/data/world-cities/basic/simplemaps_worldcities_basicv1.74.zip", temp)
+data <- read.csv(unz(temp, "worldcities.csv"))
+unlink(temp)
+head(data, 3)
+```
+
+The dataset is too large for this assignment, to simplify the data only 5 columns are chosen:
+city, lat, lng, capital, population. Further on, only primary capital cities are selected.
+```{r, comment=""}
+mydf<-data[,c(1,3,4,9,10)]
+mydf<-mydf[mydf$capital=='primary',]
+mydf<-mydf[,c(1,2,3,5)]
+head(mydf)
+```
+
+# World Capitals
+The map shows the world capitals with the circle size based on the relative population
+```{r, echo = FALSE, comment="", warning=FALSE}
+my_map<-leaflet(options = leafletOptions(minZoom = 1, maxZoom = 2)) %>% 
+      addTiles() %>% 
+      addCircles(data=mydf,lat=~lat, lng=~lng, popup = ~as.character(city), weight=1, radius = sqrt(mydf$population)*200, color = "red")
+my_map
+```
+
+The map shows the world capitals clusters
+```{r, echo = FALSE, comment="", warning=FALSE}
+my_map<-leaflet(options = leafletOptions(minZoom = 1, maxZoom = 12)) %>% 
+      addTiles() %>% 
+      addMarkers(data=mydf,lat=~lat, lng=~lng, popup = ~as.character(city), 
+                 clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F))
+my_map
+```
+
