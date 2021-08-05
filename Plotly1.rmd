@@ -1,0 +1,82 @@
+---
+title: "First PlotLy Presentation - COVID 19"
+author: "Irina White"
+date: "05/08/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Data Set Overview {.smaller}
+
+
+The data used for this presentation can be freely obtained from Covid19 <span style="color:red">GitHub page</span> <https://github.com/owid/covid-19-data/tree/master/public/data)>
+<br>
+The full explanation of the data can be found on the same webpage.
+
+<div>The used database is SCV file, that has been downloaded, and the data was modified as follows:</div>
+<br>
+- Selected columns: location, date, total cases, total deaths, fully vaccinated, population; the column date been dropped later.
+- Selected rows: the most recent date, only completed cases.
+- Added values: vaccination ratio; death ratio; total number of cases ratio; all of the above with respect to the country population.
+
+
+## The R code below shows how the data been downloaded {.smaller}
+```{r, echo=TRUE, cache=TRUE, tidy=TRUE}
+# Download temp file to obtain data and then unlink
+temp <- tempfile()
+download.file(
+      "https://covid.ourworldindata.org/data/owid-covid-data.csv", temp)
+data<-read.csv(temp)
+unlink(temp)
+```
+
+## The R code below shows how the data been manipulated {.smaller}
+```{r, echo=TRUE, linestretch = 1, size="Large"}
+#Data preparation
+mydata<-data[,c(3,4,5,8,37,45)]
+mydata<-subset(mydata, mydata$date==max(mydata$date))
+mydata<- mydata[,c(-2)]
+mydata<-mydata[complete.cases(mydata),]
+mydata$vac_ratio<-round(mydata$people_fully_vaccinated/mydata$population,2)
+mydata$death_ratio<-round(mydata$total_deaths/mydata$population,2)
+mydata$cases_ratio<-round(mydata$total_cases/mydata$population,2)
+colnames(mydata)[colnames(mydata) == "people_fully_vaccinated"] <- "f_vacc"
+```
+
+## The top 5 lines of the dataset {.smaller}
+<small>
+```{r, comment=""}
+head(mydata)
+```
+</small>
+
+## Death rate with respect to the population
+
+The highest rate of the death cases with respect to the population.
+
+```{r}
+max(mydata$total_deaths/mydata$population)
+```
+As it is **less than 1%** it will be dropped from the graphical presentation.
+
+
+## Plot 1 (PlotLy)
+```{r, echo=FALSE, fig.align='centre', fig.cap='Total Cases Rates per Country', warning=FALSE, message=FALSE}
+library(plotly)
+library(tidyr)
+library(dplyr)
+plotdf<-as.data.frame(mydata)%>% gather(key='ratio_type', value='ratio_value', cases_ratio, vac_ratio)
+p<-plot_ly(x=plotdf$location, y=plotdf$ratio_value, color = plotdf$ratio_type)
+p
+```
+
+## Plot 2 (Plotly)
+```{r, echo=FALSE, fig.align='centre', fig.cap='Box plot', warning=FALSE, message=FALSE}
+
+plotdf<-as.data.frame(mydata)%>% gather(key='ratio_type', value='ratio_value', cases_ratio, vac_ratio)
+p<-plot_ly(y=plotdf$ratio_value, color = plotdf$ratio_type, type='box')
+p
+```
